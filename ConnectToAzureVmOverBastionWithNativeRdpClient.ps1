@@ -165,6 +165,7 @@ function ConnectToAzVM {
     }
 
     try {
+    #This is a fake subscription ID - adapt it your bastion sunscription ID
         $AzureBastionSub = 's4wdt5p5-q7g9-8456-4k56-e2l745c87eec'
         Login $AzureBastionSub
         #Connect-AzAccount -UseDeviceAuthentication -Subscription $AzureBastionSub
