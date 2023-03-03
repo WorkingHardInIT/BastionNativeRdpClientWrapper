@@ -196,8 +196,7 @@ function ConnectToAzVM {
             #$VmName = 'peeredclientvm'
             $VMToConnectTo = Get-AZVM -name $VmName #'peeredclientvm'
             [string]$VmID = $VMToConnectTo.Id
-            $VmID
-
+            
             write-Host -ForegroundColor Yellow "$(Get-Date): connecting to VM named: [$VmName]" 
             az network bastion rdp --name $BastionName --resource-group $BastionResourceGroup --configure --target-resource-id $VmID  --only-show-errors
         }
