@@ -152,8 +152,8 @@ function ConnectToAzVM {
         $config = $VerifyWorkingSub | ConvertFrom-Json 
 
         if ($config.id -eq $AzureBastionSub) {
-            $BastionName = 'bas-centralbastion-vwan-dv' #Get-AzBastion --Name 'bas-centralbastion-vwan-dv'
-            $BastionResourceGroup = 'rg-centralbastion-vwan-dv'
+            $BastionName = 'bas-centralbastion-vwan-dv' #Get-AzBastion --Name 'bas-centralbastion-vwan-dvh'
+            $BastionResourceGroup = 'rg-centralbastion-vwan-dvh'
         }
         else {
             write-host -ForegroundColor Tellow "$(Get-Date): You are not connected to the correct Bastion subscription - aborting the process!"
