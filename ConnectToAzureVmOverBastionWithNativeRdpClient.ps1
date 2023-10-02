@@ -1,3 +1,5 @@
+$Script:whiteSpace = " " * (((Get-Date).ToString()).Length + 2)
+
 Function Test-CommandExists {
     Param ($command)
     $oldPreference = $ErrorActionPreference
@@ -24,7 +26,7 @@ function InstallOrUpgradeAzModuleForPoSh() {
 
             Write-Host ("$(Get-Date): Azure PowerShell module is already installed and will be upgraded to the latest version if needed. This can take a couple of minutes." )`
                 -foregroundcolor Green
-            If ((Get-Module -list -name az.accounts).Version -ne '2.11.2') {
+            If ((Get-Module -list -name az.accounts).Version -ne '2.13.1') {
                 Install-PackageProvider -Name NuGet -Force > $Null
                 Update-Module -Name Az -Force
                 Write-Host ("$(Get-Date): Azure PowerShell module  has been upgraded." )`
@@ -57,21 +59,29 @@ function InstallOrUpgradeAzCliWithBastionExtension() {
         if (Test-CommandExists az) {
 
             Write-Host ("$(Get-Date): Azure CLI is already installed and will be upgraded to the latest version if needed. This can take a couple of minutes." )`
-                -foregroundcolor Green
+                -foregroundcolor Yellow
+
+            $Result = az --version 
+            if ($Result -match 'Your CLI is up-to-date.'){Write-Host ("$(Get-Date): Azure CLI is installed and up to date. Nothing more to do for Az CLI." )`
+                -foregroundcolor Green}
+                else{
             az upgrade --yes --only-show-errors --all 2> $null
-            Write-Host ("$(Get-Date): Azure CLI has been upgraded or was already running the latest version." )`
+            Write-Host ("$(Get-Date): Azure CLI has been upgraded." )`
                 -foregroundcolor Green
             #Enable auto upgrade ... it will keep az cli up to date
             az config set auto-upgrade.enable=yes --only-show-errors 2> $null
-            az config set auto-upgrade.prompt=no  --only-show-errors 2> $null
+            #az config set auto-upgrade.prompt=no  --only-show-errors 2> $null
+            }
         }
         else {
+             Write-Host ("$(Get-Date): Azure CLI is not installed. The latest version will be installed for you. This can take a couple of minutes." )`
+                -foregroundcolor Cyan           
             # Install Azure CLI with MSI
             $ProgressPreference = 'Continue'
             Invoke-WebRequest -Uri https://aka.ms/installazurecliwindows -OutFile .\AzureCLI.msi -UseBasicParsing
-
+            
             Start-Process msiexec.exe -ArgumentList '/I AzureCLI.msi /quiet'
-            # Return $Install
+
             #Clean up the download
             Remove-Item .\AzureCLI.msi
 
@@ -87,17 +97,24 @@ function InstallOrUpgradeAzCliWithBastionExtension() {
     
     }
     Finally {
-        Write-Host ("$(Get-Date): Azure CLI is installed and running the latest version") -foregroundcolor Green
+        Write-Host ("$(Get-Date): Wrapping up Az CLI actions - Azure CLI is installed and running the latest version") -foregroundcolor Green
     }
 }
-
+Write-Host -ForegroundColor Cyan "Color Test"
 function Login($SubscriptionId, $AzureTenant) {
     Try {
         if (Test-CommandExists Get-AzContext) {
             $AzContext = Get-AzContext
             if (!$AzContext -or ($AzContext.Subscription.Id -ne $SubscriptionId)) {
                 Write-Host -ForegroundColor Yellow "$(Get-Date): You need to authenticate to your Bastion host in your tenant and subscription."
-                Connect-AzAccount -Subscription $SubscriptionId -Tenant $AzureTenant
+                $ConnectionResult = Connect-AzAccount -Subscription $SubscriptionId -Tenant $AzureTenant
+                if($Null -eq $ConnectionResult){
+                    if ($Error[0].Exception.Message -match 'InteractiveBrowserCredential authentication failed: User canceled authentication.'){
+                    Write-Host -ForegroundColor red "$(Get-Date): User NOT logged in!"
+                    Write-Host -ForegroundColor red "$Script:whiteSpace InteractiveBrowserCredential authentication failed: User canceled authentication."
+                    throw 'InteractiveBrowserCredential authentication failed: User canceled authentication.'
+    }
+                }
             }
             else {
                 Write-Host -ForegroundColor green "$(Get-Date): You are already connected to the Bastion subscripton named '$($AzContext.Subscription.Name)' with SubscriptionId '$SubscriptionId'"
@@ -105,14 +122,15 @@ function Login($SubscriptionId, $AzureTenant) {
         }
         Else {
 
-            $whiteSpace = " " * ((Get-Date).ToString()).Length
+            $whiteSpace = " " * (((Get-Date).ToString()).Length + 1)
             Write-Host -ForegroundColor Magenta   "$(Get-Date): Cannot log you in to Azure . This script requires the Azure PowerShell module to be installed."
             Write-Host -ForegroundColor Magenta "$(Get-Date): Please do this before running the script"
-            Write-Host -ForegroundColor Magenta "$whiteSpace  Alternatively, run this script with the -$InstallOrUpgradeAzModuleForPoSh  parameter set to $True"
+            Write-Host -ForegroundColor Magenta "$Script:whiteSpace Alternatively, run this script with the -$InstallOrUpgradeAzModuleForPoSh  parameter set to $True"
         }
     }
     Catch {
-        Write-Host -ForegroundColor Red "$(Get-Date): An error has occured during login. Exiting sript"
+        Write-Host -ForegroundColor Red "$(Get-Date): An error has occured during login. Exiting script"
+        Exit
     }
     Finally {
     }
@@ -147,7 +165,8 @@ function ConnectToAzVM {
 
         #Call the login function
         Login $AzureBastionSub $AzureTenant
-
+        #write-Host -foregroundcolor Magenta "Did I get here?"
+        throw 'InteractiveBrowserCredential authentication failed: User canceled authentication.'
         $VerifyWorkingSub = az account show --only-show-errors
         $config = $VerifyWorkingSub | ConvertFrom-Json 
 
@@ -156,11 +175,14 @@ function ConnectToAzVM {
             $BastionResourceGroup = 'rg-centralbastion-vwan-dvh'
         }
         else {
-            write-host -ForegroundColor Tellow "$(Get-Date): You are not connected to the correct Bastion subscription - aborting the process!"
+            write-host -ForegroundColor Yellow "$(Get-Date): You are not connected to the correct Bastion subscription - aborting the process!"
             exit
         }
     }
     Catch {
+    if ($Error[0].Exception.Message -match 'InteractiveBrowserCredential authentication failed: User canceled authentication.'){
+    Write-Host -ForegroundColor Red "$(Get-Date): InteractiveBrowserCredential authentication failed: User canceled authentication."
+    }
         Write-Host -ForegroundColor Green "$(Get-Date): This script requires the Azure PowerShell module to be installed. Please do this before running the script"
         Write-Host -ForegroundColor Green "Alternatively run this script with the -$InstallOrUpgradeAzModuleForPoSh  parameter set to $True"
         #Exit
@@ -204,4 +226,3 @@ function ConnectToAzVM {
 #ConnectToAzVM -VmName 'peeredclientvm' -InstallAndUpgradeAzCliTooling $True -InstallOrUpgradePoshModule $True
 ConnectToAzVM -VmName 'peeredclientvm' -InstallAndUpgradeAzCliTooling $True #-InstallOrUpgradePoshModule $True
 #ConnectToAzVM -VmIp 172.25.12.11 -InstallAndUpgradeAzCliTooling $True
-
