@@ -29,7 +29,7 @@ Action:         Provide the Azure VM name as a parameter and change the other
                 variables to reflect your environment prior to using the script.
 Disclaimer:     This script is provided "as is" with no warranties.
 .EXAMPLE
-.\ativeRdpViaBastionToAzureVmPoShOnly.ps1 <"Azure VM name here"> <"Bastion hostname here"> 
+.\NativeRdpViaBastionToAzureVmPoShOnly.ps1 <"Azure VM name here"> <"Bastion hostname here"> 
 
 -> .\NativeRdpViaBastionToAzureVmPoShOnly.ps1 AzureVmToConnectTo BastiionHostname
 
