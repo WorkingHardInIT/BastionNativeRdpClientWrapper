@@ -105,7 +105,7 @@ If (!([string]::IsNullOrEmpty($VmResourceId))) {
                 $DateStamp = Get-Date -Format yyyy-MM-dd
                 $TimeStamp = Get-Date -Format HHmmss
                 $DateAndTimeStamp = $DateStamp + '@' + $TimeStamp 
-                $RdpPathAndFileName = "$DesktopPath\$VMName-$DateAndTimeStamp.rdp"
+                $RdpPathAndFileName = "$DesktopPath\$AzureVmName-$DateAndTimeStamp.rdp"
                 $progressPreference = 'silently continue'
             }
             else {
@@ -140,5 +140,5 @@ If (!([string]::IsNullOrEmpty($VmResourceId))) {
     }
 }
 Else {
-    write-host -ForegroundColor Red  "We could not find $VMName"
+    write-host -ForegroundColor Red  "We could not find $AzureVmName"
 }
