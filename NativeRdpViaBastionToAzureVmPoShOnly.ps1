@@ -84,7 +84,7 @@ If (!([string]::IsNullOrEmpty($VmResourceId))) {
         try {
             $Bastion = Get-AzBastion -ResourceGroupName $BastionResoureGroup -Name $BastionHostName
             if ($Null -ne $Bastion ) {
-                write-host -ForegroundColor Cyan "Connected to Bastion$($Bastion.Name)"
+                write-host -ForegroundColor Cyan "Connected to Bastion $($Bastion.Name)"
                 write-host -ForegroundColor yellow "Generating RDP file for you to desktop..."
                 $target_resource_id = $VmResourceId
                 $enable_mfa = "true" #"true"
@@ -106,7 +106,6 @@ If (!([string]::IsNullOrEmpty($VmResourceId))) {
                 $TimeStamp = Get-Date -Format HHmmss
                 $DateAndTimeStamp = $DateStamp + '@' + $TimeStamp 
                 $RdpPathAndFileName = "$DesktopPath\$AzureVmName-$DateAndTimeStamp.rdp"
-                $progressPreference = 'silently continue'
             }
             else {
                 write-host -ForegroundColor Red  "We could not connect to the Azure bastion host"
@@ -118,10 +117,15 @@ If (!([string]::IsNullOrEmpty($VmResourceId))) {
         finally {
             <#Do this after the try block regardless of whether an exception occurred or not#>
         }
-        try {
+        try {        
+            $progressPreference =  'SilentlyContinue'
             Invoke-WebRequest $url -Method Get -Headers $headers -OutFile $RdpPathAndFileName
+            $progressPreference =  'Continue'
             if (Test-Path $RdpPathAndFileName -PathType leaf) {
-                Start-Process $RdpPathAndFileName
+                Start-Process $RdpPathAndFileName -Wait
+                write-host -ForegroundColor magenta  "Deleting the RDP file after use."
+                Remove-Item $RdpPathAndFileName
+                write-host -ForegroundColor magenta  "Deleting $RdpPathAndFileName."
             }
             else {
                 write-host -ForegroundColor Red  "The RDP file was not found on your desktop"
