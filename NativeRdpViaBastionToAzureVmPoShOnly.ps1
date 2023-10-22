@@ -108,11 +108,11 @@ If (!([string]::IsNullOrEmpty($VmResourceId))) {
                 $RdpPathAndFileName = "$DesktopPath\$AzureVmName-$DateAndTimeStamp.rdp"
             }
             else {
-                write-host -ForegroundColor Red  "We could not connect to the Azure bastion host"
+                write-host -ForegroundColor Red  "We could not connect to the Azure bastion host."
             }
         }
         catch {
-            <#Do this if a terminating exception happens#>
+            write-host -ForegroundColor Red  "The specified Azure bastion host could not be found."
         }
         finally {
             <#Do this after the try block regardless of whether an exception occurred or not#>
