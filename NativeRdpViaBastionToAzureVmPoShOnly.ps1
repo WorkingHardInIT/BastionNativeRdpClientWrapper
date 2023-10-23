@@ -10,13 +10,13 @@ Version 1.0 does not support using a tunnel. That means it is only usable on Win
 
 The script will do all of the following:
 
-It will connect to the subscription holding the Azure Bastion host if the subscription exists; otherwise, exit the script.
-Check if Azure VM can be found in the specified tenant, if so continue ...
-Check if the  bastion host can be found in the specified tenant, if so continue ...
-Check if we can get the raw access token, if so continue ...
+If the subscription exists, it will connect to the subscription holding the Azure Bastion host; otherwise, exit the script.
+Check if Azure VM can be found in the specified tenant; if so, continue ...
+Check if the  bastion host can be found in the selected tenant; if so, continue ...
+Check if we can get the raw access token; if so, continue ...
 Creates an RDP file on your desktop. It is ready to connect to your Azure VM over Bastion
 with a date/time stamp in the filename.
-Launch the created RDP file for you ready for customization and use.
+It launches the created RDP file for you, ready for customization and use.
 .NOTES
 Filename:       NativeRdpViaBastionToAzureVmPoShOnly.ps1
 Created:        24/09/2023
@@ -26,12 +26,18 @@ Version:        1.0
 PowerShell:     Azure PowerShell
 Requires:       PowerShell Az and Az.ResourceGraph
 Action:         Provide the Azure VM name as a parameter and change the other
-                variables to reflect your environment prior to using the script.
+                variables to reflect your environment before using the script.
 Disclaimer:     This script is provided "as is" with no warranties.
+.PARAMETER AzureVmName
+  The Azure VM you want to connect to
+
+.PARAMETER BastionHostName
+  The bastion Hostname you'd like to connect to. This is optional as there is a default value.
+
 .EXAMPLE
 .\NativeRdpViaBastionToAzureVmPoShOnly.ps1 <"Azure VM name here"> <"Bastion hostname here"> 
 
--> .\NativeRdpViaBastionToAzureVmPoShOnly.ps1 AzureVmToConnectTo BastiionHostname
+-> .\NativeRdpViaBastionToAzureVmPoShOnly.ps1 AzureVmToConnectTo BastionHostname
 
 .LINK
 https://workinghardinit.work
@@ -52,7 +58,7 @@ Clear-Host
 $TenantId = 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx'
 $BastionSubscriptionId = 'xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx'
 $BastionResoureGroup = 'NameOfBastioResourceGroup'
-#If the optional $BastionHostName is null or empty this means we use the default bastion host.
+#If the optional $BastionHostName is null or empty, we use the default bastion host.
 #The default value is provided in the param itself - this is redundant! TODO: clean it up.
 If (([string]::IsNullOrEmpty($BastionHostName))) {
     $BastionHostName = 'NameOfYourBastionHost'
@@ -63,9 +69,9 @@ Connect-AzAccount -Tenant $TenantId -Subscription $BastionSubscriptionId | Out-N
 write-host -ForegroundColor Green "Welcome To Bastion Native RDP"
 write-host -ForegroundColor Yellow "Looking for the resource id of the specified Azure VM"
 
-#We search for the VM resource ID so the user does have to and this without the user needing
+#We search for the VM resource ID whithout the user needing to know this.
 #to know and provide the subscription and resource group of the VM.
-#Looping through the tenant its subscription for this works but is too slow when you have a lot of them.
+#Looping through the tenant subscriptions for this works but needs to be faster when you have many of them.
 #The secret sauce to make looking up the resource ID of a VM super fast is Azure Graph.
 #You need to have Az.ResourceGraph installed. Run 'Install-Module Az.ResourceGraph'
 #It is significantly faster than looping to subs and running Get-AzVM
