@@ -49,7 +49,7 @@ https://workinghardinit.work
 
 param(
     # $subscriptionName -> Name of the subscription holding the Azure Bastion host
-    [parameter(Mandatory = $true)][ValidateNotNullOrEmpty()] [string] $AzureVmName,
+    [parameter(Mandatory = $false)][ValidateNotNullOrEmpty()] [string] $AzureVmName,
     # $bastionName -> Name of the Azure Bastion host
     [parameter(Mandatory = $false)][string] $BastionHostName = 'NameOfYourBastionHost'
 )
@@ -69,14 +69,14 @@ Connect-AzAccount -Tenant $TenantId -Subscription $BastionSubscriptionId | Out-N
 write-host -ForegroundColor Green "Welcome To Bastion Native RDP"
 write-host -ForegroundColor Yellow "Looking for the resource id of the specified Azure VM"
 
-#We search for the VM resource ID whithout the user needing to know this.
+#We search for the VM resource ID without the user needing to know this.
 #to know and provide the subscription and resource group of the VM.
 #Looping through the tenant subscriptions for this works but needs to be faster when you have many of them.
 #The secret sauce to make looking up the resource ID of a VM super fast is Azure Graph.
 #You need to have Az.ResourceGraph installed. Run 'Install-Module Az.ResourceGraph'
 #It is significantly faster than looping to subs and running Get-AzVM
 
-$VMToConnectTo = Search-AzGraph -Query "Resources | where type == 'microsoft.compute/virtualmachines' and name == '$AzureVmName'"
+$VMToConnectTo = Search-AzGraph -Query "Resources | where type == 'microsoft.compute/virtualmachines' and name == '$AzureVmName'" -UseTenantScope
 $VmResourceId = $VMToConnectTo.ResourceId
 If (!([string]::IsNullOrEmpty($VmResourceId))) {
     write-host -ForegroundColor Green "Found it: $VmResourceId"
@@ -103,7 +103,7 @@ If (!([string]::IsNullOrEmpty($VmResourceId))) {
                     "Authorization"   = "Bearer $($AccessToken)"
                     "Accept"          = "*/*"
                     "Accept-Encoding" = "gzip, deflate, br"
-                    #  "Connection" = "keep-alive"
+                    #"Connection" = "keep-alive" #Cannot use this setting if it need to work with PowerShell for Windows 5.1
                     "Content-Type"    = "application/json"
                 }
 
